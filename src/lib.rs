@@ -257,12 +257,15 @@ fn parse_request(env_vars: HashMap<String, String>, stdin: Vec<u8>) -> Request {
     let mut req = http::Request::builder();
 
     req = req.method(env_vars["REQUEST_METHOD"].as_str());
-    let uri = if env_vars.get("QUERY_STRING").unwrap_or(&"".to_owned()) != "" {
-        format!("{}?{}", env_vars["SCRIPT_NAME"], env_vars["QUERY_STRING"])
-    } else {
-        env_vars["SCRIPT_NAME"].to_owned()
-    };
-    req = req.uri(uri.as_str());
+    let query_string = env_vars.get("QUERY_STRING");
+    let uri = format!(
+        "{}{}{}{}",
+        env_vars["SCRIPT_NAME"],
+        env_vars["PATH_INFO"],
+        if query_string.is_some() { "?" } else { "" },
+        query_string.unwrap_or(&"".to_owned())
+    );
+    req = req.uri(uri);
 
     if let Some(v) = env_vars.get("SERVER_PROTOCOL") {
         if v == "HTTP/0.9" {
